@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Typing Speed Test</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        let startTime;
+        let interval;
+
+        function startTyping() {
+            if (!startTime) {
+                startTime = new Date().getTime() / 1000;
+                interval = setInterval(updateWPM, 1000);
+            }
+        }
+
+        function updateWPM() {
+            const typedText = document.getElementById('typingArea').value;
+            const currentTime = new Date().getTime() / 1000;
+            const timeElapsed = currentTime - startTime;
+            const wordsTyped = typedText.split(' ').filter(word => word.length > 0).length;
+            const wordsPerMinute = (wordsTyped / timeElapsed) * 60;
+            document.getElementById('liveWPM').innerText = `Live WPM: ${wordsPerMinute.toFixed(2)}`;
+        }
+
+        async function submitTest() {
+            clearInterval(interval);
+            const typedText = document.getElementById('typingArea').value;
+            const response = await fetch('/result', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ 
+                    typedText: typedText,
+                    startTime: startTime
+                }),
+            });
+            const result = await response.json();
+            document.getElementById('result').innerHTML = `
+                <p>Time Taken: ${result.timeTaken.toFixed(2)} seconds</p>
+                <p>Words Per Minute: ${result.wordsPerMinute.toFixed(2)}</p>
+                <p>Accuracy: ${result.accuracy.toFixed(2)}%</p>
+            `;
+        }
+    </script>
+</head>
+<body class="bg-gray-100 flex items-center justify-center min-h-screen">
+    <div class="bg-white p-6 rounded shadow-md w-full max-w-md">
+        <h1 class="text-2xl font-bold mb-4">Typing Speed Test</h1>
+        <p class="mb-4">{{ sample_text }}</p>
+        <textarea id="typingArea" class="w-full p-2 border rounded mb-4" rows="5" onfocus="startTyping()"></textarea>
+        <button class="bg-blue-500 text-white px-4 py-2 rounded" onclick="submitTest()">Submit</button>
+        <div id="liveWPM" class="mt-4"></div>
+        <div id="result" class="mt-4"></div>
+    </div>
+</body>
+</html>
